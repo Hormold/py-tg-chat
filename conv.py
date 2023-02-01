@@ -114,6 +114,10 @@ def save(chat_id):
         "w",
         encoding="utf-8",
     ) as content:
+        # Remove duplicates from history
+        conversation_history[str_id]['history'] = list(
+            dict.fromkeys(conversation_history[str_id]['history'])
+        )
         json.dump(conversation_history[str_id], content, indent=4, ensure_ascii=False)
         print(f"[CONV] Saved conversation history for chat {str_id}")
 
