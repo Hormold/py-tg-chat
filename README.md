@@ -17,5 +17,5 @@ It requires token from [https://openai.com/](https://openai.com/) but you can us
 ```python3 main.py```
 
 ## Environment variables
-- TOKEN - your token from [https://openai.com/](https://openai.com/)
+- OPENAI_TOKEN - your token from [https://openai.com/](https://openai.com/)
 - BOT_TOKEN - your bot token from [https://telegram.me/BotFather](https://telegram.me/BotFather)
