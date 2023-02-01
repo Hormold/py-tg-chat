@@ -38,7 +38,11 @@ def get(chat_id):
     else:
         members_count = len(conversation_history[str_id]["members"])
         prompt += f'You are in group chat with {members_count} members.\n'
-        # TODO: Add members list to prompt
+        known_members = []
+        for member_id in conversation_history[str_id]["members"]:
+            member = conversation_history[str_id]["members"][member_id]
+            known_members.append(user_to_str(member, True))
+        prompt += f'Known members: {", ".join(known_members)}\n'
 
     real_history = conversation_history[str_id]['history']
     # Concat prompt with history in array [prompt, ...history]
@@ -69,8 +73,8 @@ def load(chat_id):
         ),
         "r",
         encoding="utf-8",
-    ) as f:
-        conversation_history[str_id] = json.load(f)
+    ) as content:
+        conversation_history[str_id] = json.load(content)
         print(f"[CONV] Loaded conversation history for chat {str_id}")
 
 def init(chat_id, title, chat_type, from_user):
@@ -109,8 +113,8 @@ def save(chat_id):
         ),
         "w",
         encoding="utf-8",
-    ) as f:
-        json.dump(conversation_history[str_id], f, indent=4, ensure_ascii=False)
+    ) as content:
+        json.dump(conversation_history[str_id], content, indent=4, ensure_ascii=False)
         print(f"[CONV] Saved conversation history for chat {str_id}")
 
 

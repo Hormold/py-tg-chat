@@ -43,7 +43,7 @@ def help_message(message):
     /rollback - Rollback chat history
     /reset - Reset chat history
     """)
-    
+
 @bot.message_handler(func=lambda message: True)
 def reply(message):
     """Handle all messages"""
