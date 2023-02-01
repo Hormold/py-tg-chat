@@ -14,8 +14,11 @@ API_KEY = config("OPENAI_TOKEN")
 BOT_TOKEN= config("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
 chatbots = {}
-BOT_NAME = bot.get_me().username
-print(f"Loaded, bot name: @{BOT_NAME}")
+try:
+    BOT_NAME = bot.get_me().username
+    print(f"Loaded, bot name: @{BOT_NAME}")
+except AttributeError as error:
+    print(f"Looks like telegram token is invalid, error: {error}")
 
 def get_time():
     """Get current time"""
@@ -67,8 +70,7 @@ def help_message(message):
 /help - Display this message
 /rollback <num> - Rollback current chat history by <num> messages
 /reset - Reset current chat history
-/backup - Download chat history (json file)
-    """)
+/backup - Download chat history (json file)""")
 
 @bot.message_handler(commands=['backup'])
 def backup_message(message):

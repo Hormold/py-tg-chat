@@ -1,3 +1,4 @@
 transliterate
 telebot
+python-decouple
 revChatGPT
