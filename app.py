@@ -6,7 +6,7 @@ from revChatGPT.Official import Prompt
 from decouple import config
 from transliterate import translit
 import telebot
-from conv import load, get, init, reset, rollback
+from conv import load, get, init, reset, rollback, get_file_path
 from conv import save_question, save_response
 
 # Get API key from .env file
@@ -17,25 +17,39 @@ chatbots = {}
 BOT_NAME = bot.get_me().username
 print(f"Loaded, bot name: @{BOT_NAME}")
 
+def get_time():
+    """Get current time"""
+    return datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+
+def initialize_chatbot(message):
+    """Initialize chatbot"""
+    if message.chat.id not in chatbots:
+        chatbots[message.chat.id] = Chatbot(api_key=API_KEY)
+        load(message.chat.id)
+        init(message.chat.id, message.chat.title, message.chat.type, message.from_user)
+        # Inject prompt to chatbot
+        prompt = Prompt()
+        prompt.chat_history = get(message.chat.id)
+        chatbots[message.chat.id].prompt = prompt
+        print(f"[BOT] Created chatbot for chat {message.chat.id}")
+        return True
+    return False
+
 @bot.message_handler(commands=['reset'])
 def reset_event(message):
     """Reset chat history"""
-    if message.chat.id not in chatbots:
-        bot.reply_to(message, "Chat history is empty")
-        return
+    initialize_chatbot(message)
     reset(message.chat.id)
     # Inject prompt to chatbot
     prompt = Prompt()
     prompt.chat_history = get(message.chat.id) # Reload history
     chatbots[message.chat.id].prompt = prompt
-    bot.reply_to(message, "Chat history reset")
+    bot.reply_to(message, "Chat history reset, try to send some messages first")
 
 @bot.message_handler(commands=['rollback'])
 def rollback_event(message):
     """Rollback one message"""
-    if message.chat.id not in chatbots:
-        bot.reply_to(message, "Chat history is empty")
-        return
+    initialize_chatbot(message)
     # Get count from command of fallback to 1
     count = int(message.text.split()[1]) if len(message.text.split()) > 1 else 1
     rollback(message.chat.id, count)
@@ -51,33 +65,32 @@ def help_message(message):
     """Display help message"""
     bot.reply_to(message, """
 /help - Display this message
-/rollback <num> - Rollback chat history by <num> messages
-/reset - Reset chat history
-/info - Display chat info
+/rollback <num> - Rollback current chat history by <num> messages
+/reset - Reset current chat history
+/backup - Download chat history (json file)
     """)
 
-@bot.message_handler(commands=['info'])
-def info_message(message):
-    """Display chat info"""
-    bot.reply_to(message, f"""
-Chat ID: {message.chat.id}
-Chat title: {message.chat.title}
-Chat type: {message.chat.type}
-    """)
-
+@bot.message_handler(commands=['backup'])
+def backup_message(message):
+    """Download chat history"""
+    initialize_chatbot(message)
+    # Get chat history as json string
+    file_path = get_file_path(message.chat.id)
+    # Send chat history as file - backup.json
+    bot.send_document(
+        message.chat.id,
+        document=open(file_path, 'rb'),
+        caption="Chat history backup"
+    )
 
 @bot.message_handler(func=lambda message: True)
 def reply(message):
-    """Handle all messages"""
-    if message.chat.id not in chatbots:
-        chatbots[message.chat.id] = Chatbot(api_key=API_KEY)
-        load(message.chat.id)
-        init(message.chat.id, message.chat.title, message.chat.type, message.from_user)
-        # Inject prompt to chatbot
-        prompt = Prompt()
-        prompt.chat_history = get(message.chat.id)
-        chatbots[message.chat.id].prompt = prompt
-        print(f"[BOT] Created chatbot for chat {message.chat.id}")
+    """Handle all incoming messages"""
+    initialize_chatbot(message)
+
+    # Ignore zero length messages or it 1 symbol
+    if len(message.text) < 2:
+        return
 
     # If message not from private chat, it must start with bot name
     if message.chat.type != "private" and not message.text.startswith(f"@{BOT_NAME}"):
@@ -96,12 +109,13 @@ def reply(message):
     bot.send_chat_action(message.chat.id, 'typing')
 
     try:
+        print(f"[{get_time()}] [{message.from_user.id} in {message.chat.id}] > {message.text}")
         resp = chatbots[message.chat.id].ask(message.text)
-        time = datetime.now().strftime('%d/%m/%Y %H:%M:%S')
-        print(f"[{time}] ({message.from_user.id} in {message.chat.id}) {message.text}")
+        print(f"[{get_time()}] [BOT] < {resp['choices'][0]['text']}")
         bot.reply_to(message, resp["choices"][0]["text"])
         save_response(message.chat.id, resp["choices"][0]["text"])
     except Exception as ex:
+        bot.reply_to(message, 'Oops, something went wrong. '+str(ex))
         print(f"Error: {ex}")
 
 bot.infinity_polling()

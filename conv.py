@@ -21,6 +21,18 @@ def trans(text):
     """Translate text to english"""
     return translit(text, 'ru', reversed=True)
 
+def get_full_data(chat_id):
+    """Get full conversation history"""
+    str_id = str(chat_id)
+    if str_id not in conversation_history:
+        return {}
+    data = json.dumps(conversation_history[str_id], indent=4, ensure_ascii=False)
+    return data
+
+def get_file_path(chat_id):
+    """Get file path for chat history"""
+    return os.path.join(logDir, f"{str(chat_id)}.json")
+
 def get(chat_id):
     """Get conversation history for Prompt"""
     str_id = str(chat_id)
@@ -61,19 +73,10 @@ def get(chat_id):
 def load(chat_id):
     """Load conversation history from file"""
     str_id = str(chat_id)
-    if not os.path.exists(
-        os.path.join(
-            logDir,
-            str_id + ".json",
-        )
-    ):
-        return print (f"[ERROR] Conversation history for chat {str_id} not found")
-    with open(
-        os.path.join(logDir, str_id + ".json",
-        ),
-        "r",
-        encoding="utf-8",
-    ) as content:
+    path = get_file_path(str_id)
+    if not os.path.exists(path):
+        return print (f"[ERROR] Conversation history for chat {str_id} not found in {path}")
+    with open(path, "r", encoding="utf-8") as content:
         conversation_history[str_id] = json.load(content)
         print(f"[CONV] Loaded conversation history for chat {str_id}")
 
@@ -93,12 +96,13 @@ def init(chat_id, title, chat_type, from_user):
         "type": chat_type,
     }
 
-    conversation_history[str_id]['members'][from_user.id] = {
+    conversation_history[str_id]['members'][str(from_user.id)] = {
         "id": from_user.id,
         "first_name": trans(from_user.first_name if from_user.first_name is not None else ""),
         "last_name": trans(from_user.last_name if from_user.last_name is not None else ""),
         "username": from_user.username,
     }
+    # Save conversation history to file after init
     save(str_id)
 
 def save(chat_id):
@@ -106,14 +110,8 @@ def save(chat_id):
     str_id = str(chat_id)
     if str_id not in conversation_history:
         return
-    with open(
-        os.path.join(
-            logDir,
-            str_id + ".json",
-        ),
-        "w",
-        encoding="utf-8",
-    ) as content:
+    path = get_file_path(str_id)
+    with open(path, "w", encoding="utf-8") as content:
         # Remove duplicates from history
         conversation_history[str_id]['history'] = list(
             dict.fromkeys(conversation_history[str_id]['history'])
