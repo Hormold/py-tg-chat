@@ -1,4 +1,6 @@
 transliterate
 pyTelegramBotAPI
 python-decouple
-revChatGPT
+openai
+pre-commit
+tiktoken

@@ -1,15 +1,18 @@
 # pylint: disable = no-name-in-module
 """Telegram bot for OpenAI GPT-3 chatbot"""
 from datetime import datetime
-from revChatGPT.Official import Chatbot
-from revChatGPT.Official import Prompt
 from decouple import config
 from transliterate import translit
 import telebot
+
+# Local imports
+from revChatGPT.Official import Chatbot
+from revChatGPT.Official import Prompt
 from conv import load, get, init, reset, rollback, get_file_path
 from conv import save_question, save_response
 
 # Get API key from .env file
+OPENAI_ENGINE = config("OPENAI_ENGINE")
 API_KEY = config("OPENAI_TOKEN")
 BOT_TOKEN= config("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -27,7 +30,7 @@ def get_time():
 def initialize_chatbot(message):
     """Initialize chatbot"""
     if message.chat.id not in chatbots:
-        chatbots[message.chat.id] = Chatbot(api_key=API_KEY)
+        chatbots[message.chat.id] = Chatbot(api_key=API_KEY, engine=OPENAI_ENGINE)
         load(message.chat.id)
         init(message.chat.id, message.chat.title, message.chat.type, message.from_user)
         # Inject prompt to chatbot
