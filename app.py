@@ -12,7 +12,6 @@ from conv import load, get, init, reset, rollback, get_file_path
 from conv import save_question, save_response
 
 # Get API key from .env file
-OPENAI_ENGINE = config("OPENAI_ENGINE")
 API_KEY = config("OPENAI_TOKEN")
 BOT_TOKEN= config("BOT_TOKEN")
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -30,7 +29,7 @@ def get_time():
 def initialize_chatbot(message):
     """Initialize chatbot"""
     if message.chat.id not in chatbots:
-        chatbots[message.chat.id] = Chatbot(api_key=API_KEY, engine=OPENAI_ENGINE)
+        chatbots[message.chat.id] = Chatbot(api_key=API_KEY)
         load(message.chat.id)
         init(message.chat.id, message.chat.title, message.chat.type, message.from_user)
         # Inject prompt to chatbot

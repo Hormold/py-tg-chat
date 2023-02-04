@@ -19,3 +19,4 @@ It requires token from [https://openai.com/](https://openai.com/) but you can us
 ## Environment variables
 - OPENAI_TOKEN - your token from [https://openai.com/](https://openai.com/)
 - BOT_TOKEN - your bot token from [https://telegram.me/BotFather](https://telegram.me/BotFather)
+- OPENAI_ENGINE - engine for generating text. Default is text-davinci-003 (paid). Current free engine is text-chat-davinci-002-20221122 (ChatGPT)
