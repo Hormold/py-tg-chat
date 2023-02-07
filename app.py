@@ -2,13 +2,12 @@
 """Telegram bot for OpenAI GPT-3 chatbot"""
 from datetime import datetime
 from decouple import config
-from transliterate import translit
 import telebot
 
 # Local imports
 from revChatGPT.Official import Chatbot
 from revChatGPT.Official import Prompt
-from conv import load, get, init, reset, rollback, get_file_path
+from conv import load, get, init, reset, rollback, get_file_path, trans
 from conv import save_question, save_response
 
 # Get API key from .env file
@@ -104,7 +103,7 @@ def reply(message):
 
     # Allow only latin characters
     if not message.text.isascii():
-        message.text = translit(message.text, "ru", reversed=True)
+        message.text = trans(message.text)
         # Non latin characters are very slow to process and badly tokenized
     # Save message to chat history
     save_question(message.chat.id, message.text, message.from_user)

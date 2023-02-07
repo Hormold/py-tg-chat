@@ -2,6 +2,9 @@
 import os
 import json
 from transliterate import translit
+from decouple import config
+
+ENABLE_TRANSLIT = config("ENABLE_TRANSLIT", default=False, cast=bool)
 logDir = os.path.join(os.getcwd(), "logs")
 conversation_history = {}
 
@@ -19,7 +22,10 @@ def user_to_str(user, with_id=True):
 
 def trans(text):
     """Translate text to english"""
-    return translit(text, 'ru', reversed=True)
+    if ENABLE_TRANSLIT:
+        return translit(text, 'ru', reversed=True)
+    else:
+        return text
 
 def get_full_data(chat_id):
     """Get full conversation history"""
