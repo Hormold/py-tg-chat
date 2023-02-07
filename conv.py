@@ -5,6 +5,8 @@ from transliterate import translit
 from decouple import config
 
 ENABLE_TRANSLIT = config("ENABLE_TRANSLIT", default=False, cast=bool)
+if ENABLE_TRANSLIT:
+    print("[CONFIG] Transliteration is enabled (cyr -> latin))")
 logDir = os.path.join(os.getcwd(), "logs")
 conversation_history = {}
 
