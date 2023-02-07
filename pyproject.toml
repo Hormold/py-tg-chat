@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "py-tg-chat"
+version = "0.1.0"
+description = ""
+authors = ["Nikita <hormold@gmail.com>"]
+readme = "README.md"
+packages = [{include = "py_tg_chat"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+transliterate = "^1.10.2"
+pytelegrambotapi = "^4.10.0"
+python-decouple = "^3.7"
+openai = "^0.26.5"
+pre-commit = "^3.0.4"
+tiktoken = "^0.2.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

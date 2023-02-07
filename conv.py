@@ -6,7 +6,7 @@ from decouple import config
 
 ENABLE_TRANSLIT = config("ENABLE_TRANSLIT", default=False, cast=bool)
 if ENABLE_TRANSLIT:
-    print("[CONFIG] Transliteration is enabled (cyr -> latin))")
+    print("[CONFIG] Transliteration is enabled (cyr -> latin)")
 logDir = os.path.join(os.getcwd(), "logs")
 conversation_history = {}
 
@@ -137,7 +137,7 @@ def save_question(chat_id, text, author):
 
     # If member is not in members list, add him
     if not str(author.id) in conversation_history[str_id]['members']:
-        print(f"Adding new member {author.id} to chat {str_id}")
+        print(f"[MEMBERS] Adding new member {author.id} to chat {str_id}")
         conversation_history[str_id]['members'][str(author.id)] = {
             "id": author.id,
             "first_name": trans(author.first_name if author.first_name is not None else ""),

@@ -12,14 +12,18 @@ from conv import save_question, save_response
 
 # Get API key from .env file
 API_KEY = config("OPENAI_TOKEN")
-BOT_TOKEN= config("BOT_TOKEN")
+BOT_TOKEN = config("BOT_TOKEN")
+OPENAI_ENGINE = config("OPENAI_ENGINE", default="text-davinci-003")
 bot = telebot.TeleBot(BOT_TOKEN)
 chatbots = {}
 try:
     BOT_NAME = bot.get_me().username
-    print(f"Loaded, bot name: @{BOT_NAME}")
+    print(f"[TELEGRAM] Token is ok, bot username: @{BOT_NAME}")
 except AttributeError as error:
     print(f"Looks like telegram token is invalid, error: {error}")
+    exit(1)
+
+print(f"[BOT] Initialized Chatbot with engine {OPENAI_ENGINE}")
 
 def get_time():
     """Get current time"""
@@ -48,7 +52,7 @@ def reset_event(message):
     prompt = Prompt()
     prompt.chat_history = get(message.chat.id) # Reload history
     chatbots[message.chat.id].prompt = prompt
-    bot.reply_to(message, "Chat history reset, try to send some messages first")
+    bot.reply_to(message, "Chat history has been reset to empty!")
 
 @bot.message_handler(commands=['rollback'])
 def rollback_event(message):
@@ -62,16 +66,23 @@ def rollback_event(message):
     prompt.chat_history = get(message.chat.id) # Reload history
     chatbots[message.chat.id].prompt = prompt
     last_message = prompt.chat_history[-1]
-    bot.reply_to(message, "Chat history rollback, last message now: " + last_message)
+    bot.reply_to(message, "Chat history rollback successful. Last message now: " + last_message)
 
 @bot.message_handler(commands=['help'])
 def help_message(message):
     """Display help message"""
-    bot.reply_to(message, """
+    bot.reply_to(message, """Hi, I'm a chatbot powered by OpenAI GPT-3. 
+Open source code on GitHub: https://github.com/Hormold/py-tg-chat
+Current chat history size: """ + str(len(get(message.chat.id))) + """
+Model in use: """ + OPENAI_ENGINE + """
+Owner: @define
+
+Available commands:
 /help - Display this message
 /rollback <num> - Rollback current chat history by <num> messages
-/reset - Reset current chat history
-/backup - Download chat history (json file)""")
+/reset - Remove all current chat history
+/backup - Download chat history (json file)
+""")
 
 @bot.message_handler(commands=['backup'])
 def backup_message(message):
@@ -119,6 +130,6 @@ def reply(message):
         save_response(message.chat.id, resp["choices"][0]["text"])
     except Exception as ex:
         bot.reply_to(message, 'Oops, something went wrong. '+str(ex))
-        print(f"Error: {ex}")
+        print(f"[ERROR] On reply > {ex}")
 
 bot.infinity_polling()
