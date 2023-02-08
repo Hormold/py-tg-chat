@@ -102,6 +102,7 @@ def init(chat_id, title, chat_type, from_user):
         "history": [],
         "members": {},
         "type": chat_type,
+        "settings": {}
     }
 
     conversation_history[str_id]['members'][str(from_user.id)] = {
@@ -175,3 +176,26 @@ def rollback(chat_id, count):
         return
     conversation_history[str_id]['history'] = conversation_history[str_id]['history'][:-count]
     save(str_id)
+
+def save_chat_settings(chat_id, key, value): 
+    """Save chat settings"""
+    str_id = str(chat_id)
+    if str_id not in conversation_history:
+        return
+    if not 'settings' in conversation_history[str_id]:
+        conversation_history[str_id]['settings'] = {}
+    conversation_history[str_id]['settings'][key] = value
+    save(str_id)
+
+def get_all_chat_settings(chat_id, default_settings):
+    """Get all chat settings"""
+    str_id = str(chat_id)
+    # convert default_settings [{"k": "...", "default": "123"}] to {key: default_value}
+    default_settings = {item['k']: item['default'] for item in default_settings}
+
+    if str_id not in conversation_history:
+        return default_settings
+    if not 'settings' in conversation_history[str_id]:
+        return default_settings
+    mixed_settings = {**default_settings, **conversation_history[str_id]['settings']}
+    return mixed_settings

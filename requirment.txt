@@ -1,6 +1,0 @@
-transliterate
-pyTelegramBotAPI
-python-decouple
-openai
-pre-commit
-tiktoken

@@ -14,6 +14,8 @@ python-decouple = "^3.7"
 openai = "^0.26.5"
 pre-commit = "^3.0.4"
 tiktoken = "^0.2.0"
+readability-lxml = "^0.8.1"
+duckduckgo-search = "^2.8.0"
 
 
 [build-system]
