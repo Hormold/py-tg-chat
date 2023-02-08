@@ -1,4 +1,4 @@
-## gpt-bot
+## Self hosted telegram bot to talk with GPT-3 using OpenAI Model with converstion manager
 
 Simple telegram bot for generating text using ChatGPT model.
 Bot remember your conversation context and use it for generating next answer.
