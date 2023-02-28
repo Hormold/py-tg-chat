@@ -43,6 +43,12 @@ AVAILBLE_SETTINGS = [
         "default": "all",
         "description": "Time range of DuckDuckGo search engine: all, d, w, m, y",
         "options": ["all", "d", "w", "m", "y"],
+    },
+    {
+        "k": "temperature",
+        "default": 0.5,
+        "description": "Temperature of OpenAI GPT-3 chatbot",
+        "options": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
     }
 ]
 
@@ -89,6 +95,8 @@ def rollback_event(message):
     last_message = prompt.chat_history[-1]
     bot.reply_to(message, "Chat history rollback successful. Last message now: " + last_message)
 
+@bot.message_handler(commands=['temperature'])
+
 @bot.message_handler(commands=['help', 'start'])
 def help_message(message):
     """Display help message"""
@@ -104,7 +112,7 @@ Available commands:
 /reset - Remove all current chat history
 /backup - Download chat history (json file)
 /s <query> - Search on DuckDuckGo and compile a one-line response
-/settings key:value - Change chat settings (see /settings)
+/settings key:value - Change chat settings (see /settings) + set temperature
 """)
 
 @bot.message_handler(commands=['settings'])
@@ -127,6 +135,8 @@ def settings_message(message):
             return
         if key == "num":
             value = int(value)
+        if key == "temperature":
+            value = float(value)
         # if has settings[key]["options"] and value not in settings[key]["options"]
         if "options" in settings[key] and value not in settings[key]["options"]:
             bot.reply_to(message, f"Invalid setting value: {value}, available options: {settings[key]['options'].join(', ')}")
@@ -197,12 +207,14 @@ def reply(message):
     # Save message to chat history
     save_question(message.chat.id, message.text, message.from_user)
 
+    settings = get_all_chat_settings(message.chat.id, AVAILBLE_SETTINGS)
+
     # Send typing status
     bot.send_chat_action(message.chat.id, 'typing')
 
     try:
-        print(f"[{get_time()}] [{message.from_user.id} in {message.chat.id}] > {message.text}")
-        resp = chatbots[message.chat.id].ask(message.text)
+        print(f"[{get_time()}] [{message.from_user.id} in {message.chat.id}] > {message.text} ({settings['temperature']})")
+        resp = chatbots[message.chat.id].ask(message.text, temperature=settings["temperature"])
         print(f"[{get_time()}] [BOT] < {resp['choices'][0]['text']}")
         bot.reply_to(message, resp["choices"][0]["text"])
         save_response(message.chat.id, resp["choices"][0]["text"])
