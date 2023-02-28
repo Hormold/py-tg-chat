@@ -34,9 +34,9 @@ AVAILBLE_SETTINGS = [
     },
     {
         "k": "num",
-        "default": 3,
+        "default": "3",
         "description": "Max results to show from DuckDuckGo search engine",
-        "options": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        "options": ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
     },
     {
         "k": "time",
@@ -134,10 +134,7 @@ def settings_message(message):
         if key not in settings:
             bot.reply_to(message, f"Invalid setting key: {key}")
             return
-        if key == "num":
-            value = int(value)
-        if key == "temperature":
-            value = float(value)
+      
         # if has settings[key]["options"] and value not in settings[key]["options"]
         if "options" in settings[key] and value not in settings[key]["options"]:
             #map_to_str = lambda x: str(x)
@@ -146,6 +143,10 @@ def settings_message(message):
             return
         if (value == "default" or len(value) == 0 or value == " " or len(value) > 100):
             value = settings[key]["default"]
+        if key == "num":
+            value = int(value)
+        #if key == "temperature":
+        #    value = float(value)
         save_chat_settings(message.chat.id, key, value)
         bot.reply_to(message, f"Setting {key} has been changed to {value}")
 
@@ -173,7 +174,7 @@ def search_message(message):
     bot.send_chat_action(message.chat.id, 'typing')
 
     try: 
-        final_prompt = get_serp(query, num_results=settings["num"], time_period=settings["time"], region=settings["region"])
+        final_prompt = get_serp(query, num_results=int(settings["num"]), time_period=settings["time"], region=settings["region"])
         save_question(message.chat.id, 'Search in DuckDuckGo for: '+query, message.from_user)
         resp = chatbots[message.chat.id].ask(final_prompt)
         save_response(message.chat.id, resp["choices"][0]["text"])
