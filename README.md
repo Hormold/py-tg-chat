@@ -1,4 +1,4 @@
-## gpt-bot
+## Self hosted telegram bot to talk with GPT-3 using OpenAI Model with converstion manager
 
 Simple telegram bot for generating text using ChatGPT model.
 Bot remember your conversation context and use it for generating next answer.
@@ -7,10 +7,11 @@ It requires token from [https://openai.com/](https://openai.com/) but you can us
 ## Installation (Poetry)
 
 1. Install [Poetry](https://python-poetry.org/docs/#installation)
-2. Run ```poetry install```
-3. Run ```poetry shell```
-4. Edit ```.env``` file and set your tokens (see below)
-5. And then ```python3 main.py```
+2. Navigate to project folder. If you want to save env in project folder use: ```poetry config virtualenvs.create false --local```
+3. Run ```poetry install```
+4. Run ```poetry shell```
+5. Edit ```.env``` file and set your tokens (see below)
+6. And then ```python3 main.py```
 
 ## Environment variables
 - OPENAI_TOKEN - your token from [https://openai.com/](https://openai.com/)
