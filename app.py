@@ -46,9 +46,9 @@ AVAILBLE_SETTINGS = [
     },
     {
         "k": "temperature",
-        "default": 0.5,
+        "default": "0.5",
         "description": "Temperature of OpenAI GPT-3 chatbot",
-        "options": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+        "options": ["0.1", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0"],
     }
 ]
 
@@ -140,8 +140,8 @@ def settings_message(message):
             value = float(value)
         # if has settings[key]["options"] and value not in settings[key]["options"]
         if "options" in settings[key] and value not in settings[key]["options"]:
-            map_to_str = lambda x: str(x)
-            options = list(map(map_to_str, settings[key]["options"]))
+            #map_to_str = lambda x: str(x)
+            options = settings[key]["options"]#map(map_to_str, settings[key]["options"])
             bot.reply_to(message, f"Invalid setting value: {value}, available options: {options.join(', ')}")
             return
         if (value == "default" or len(value) == 0 or value == " " or len(value) > 100):

@@ -30,7 +30,7 @@ class Chatbot:
         self.prompt = Prompt()
         self.conversations = {}
 
-    def ask(self, user_request: str, temperature: 0.5) -> dict:
+    def ask(self, user_request: str, temperature: "0.5") -> dict:
         """
         Send a request to ChatGPT and return the response
         """
@@ -38,7 +38,7 @@ class Chatbot:
         completion = openai.Completion.create(
             engine=self.engine,
             prompt=prompt,
-            temperature=temperature,
+            temperature=float(temperature),
             max_tokens=self.get_max_tokens(prompt),
             stop=["\n\n\n"],
         )
