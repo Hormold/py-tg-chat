@@ -126,6 +126,7 @@ def settings_message(message):
         for sett in AVAILBLE_SETTINGS:
             current_value = settings[sett["k"]]
             text += f"{sett['k']}: {current_value} ({sett['description']})\n"
+        text+="\n\nSend message in format /settings key:value to change setting. Example: /settings temperature:0.5"
         bot.reply_to(message, text)
     else:
         # Change settings
@@ -139,7 +140,9 @@ def settings_message(message):
             value = float(value)
         # if has settings[key]["options"] and value not in settings[key]["options"]
         if "options" in settings[key] and value not in settings[key]["options"]:
-            bot.reply_to(message, f"Invalid setting value: {value}, available options: {settings[key]['options'].join(', ')}")
+            map_to_str = lambda x: str(x)
+            options = list(map(map_to_str, settings[key]["options"]))
+            bot.reply_to(message, f"Invalid setting value: {value}, available options: {options.join(', ')}")
             return
         if (value == "default" or len(value) == 0 or value == " " or len(value) > 100):
             value = settings[key]["default"]
