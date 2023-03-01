@@ -39,7 +39,7 @@ def get_full_data(chat_id):
 
 def get_file_path(chat_id):
     """Get file path for chat history"""
-    return os.path.join(logDir, f"{str(chat_id)}.json")
+    return os.path.join(logDir, f"new_{str(chat_id)}.json")
 
 def get(chat_id):
     """Get conversation history for Prompt"""
@@ -47,7 +47,7 @@ def get(chat_id):
     if str_id not in conversation_history:
         return []
     # Generate prompt from history. Using title, type and member list
-    prompt = f'You are chat bot. Chat title: "{conversation_history[str_id]["title"]}"\n'
+    prompt = f'You are ChatGPT bot, helping user inside Telegram. Chat title: "{conversation_history[str_id]["title"]}"\n'
 
     if conversation_history[str_id]['type'] == "private":
         member_obj = conversation_history[str_id]['members']
@@ -62,20 +62,15 @@ def get(chat_id):
         for member_id in conversation_history[str_id]["members"]:
             member = conversation_history[str_id]["members"][member_id]
             known_members.append(user_to_str(member, True))
-        prompt += f'Known members: {", ".join(known_members)}\n'
+        prompt += f'Known members of chat: {", ".join(known_members)}\n'
 
     real_history = conversation_history[str_id]['history']
-    # Concat prompt with history in array [prompt, ...history]
-    # if one line is match one of prompt variants, it will be ignored
-    ignore_lines = ['You are chat bot', 'Your companion', 'You are in group chat']
-    # Filter history
-    real_history = [
-        line for
-        line in real_history
-        if not any(ignore in line for ignore in ignore_lines)
-    ]
     # Add prompt to beginning of history
-    real_history = [prompt] + real_history
+    # Remove messages where role is system
+    real_history = [x for x in real_history if x['role'] != 'system']
+    # Limit to LAST 25 messages
+    real_history = real_history[-25:] # TODO: calc based on messages length
+    real_history = [{"role": "system", "content": prompt}] + real_history
     return real_history
 
 def load(chat_id):
@@ -121,10 +116,8 @@ def save(chat_id):
         return
     path = get_file_path(str_id)
     with open(path, "w", encoding="utf-8") as content:
-        # Remove duplicates from history
-        conversation_history[str_id]['history'] = list(
-            dict.fromkeys(conversation_history[str_id]['history'])
-        )
+        # Remove duplicates from history where content is the same
+        conversation_history[str_id]['history'] = [i for n, i in enumerate(conversation_history[str_id]['history']) if i not in conversation_history[str_id]['history'][n + 1:]]
         json.dump(conversation_history[str_id], content, indent=4, ensure_ascii=False)
         print(f"[CONV] Saved conversation history for chat {str_id}")
 
@@ -147,9 +140,9 @@ def save_question(chat_id, text, author):
         }
 
     if conversation_history[str_id]['type'] == 'private':
-        conversation_history[str_id]['history'].append(f'User: {text}')
+        conversation_history[str_id]['history'].append({"role": 'user', "content": text})
     else:
-        conversation_history[str_id]['history'].append(f'#{author.id}: {text}')
+        conversation_history[str_id]['history'].append({"role": 'user', "content": f'#{author.id}: {text}'});
     save(str_id)
 
 def save_response(chat_id, text):
@@ -158,7 +151,7 @@ def save_response(chat_id, text):
     if str_id not in conversation_history:
         print(f"[ERROR] chat {str_id} is not initialized")
         return
-    conversation_history[str_id]['history'].append(f'Bot: {text}')
+    conversation_history[str_id]['history'].append({"role": 'assistant', "content": text})
     save(str_id)
 
 def reset(chat_id):

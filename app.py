@@ -1,6 +1,7 @@
 # pylint: disable = no-name-in-module
 """Telegram bot for OpenAI GPT-3 chatbot"""
 from datetime import datetime
+import traceback
 from decouple import config
 import telebot
 
@@ -14,7 +15,7 @@ from utils.serp import get_serp
 # Get API key from .env file
 API_KEY = config("OPENAI_TOKEN")
 BOT_TOKEN = config("BOT_TOKEN")
-OPENAI_ENGINE = config("OPENAI_ENGINE", default="text-davinci-003")
+OPENAI_ENGINE = config("OPENAI_ENGINE", default="gpt-3.5-turbo")
 bot = telebot.TeleBot(BOT_TOKEN)
 chatbots = {}
 try:
@@ -66,6 +67,7 @@ def initialize_chatbot(message):
         prompt = Prompt()
         prompt.chat_history = get(message.chat.id)
         chatbots[message.chat.id].prompt = prompt
+        # Depricated old chat history
         print(f"[BOT] Created chatbot for chat {message.chat.id}")
         return True
     return False
@@ -79,6 +81,7 @@ def reset_event(message):
     prompt = Prompt()
     prompt.chat_history = get(message.chat.id) # Reload history
     chatbots[message.chat.id].prompt = prompt
+    # Depricated old chat history
     bot.reply_to(message, "Chat history has been reset to empty!")
 
 @bot.message_handler(commands=['rollback'])
@@ -92,7 +95,11 @@ def rollback_event(message):
     prompt = Prompt()
     prompt.chat_history = get(message.chat.id) # Reload history
     chatbots[message.chat.id].prompt = prompt
-    last_message = prompt.chat_history[-1]
+    # Check if can rollback (not more than history size)
+    if len(prompt.chat_history) < count:
+        bot.reply_to(message, "Can't rollback more than chat history size!")
+        return
+    last_message = prompt.chat_history[-1]["text"]
     bot.reply_to(message, "Chat history rollback successful. Last message now: " + last_message)
 
 @bot.message_handler(commands=['temperature'])
@@ -176,18 +183,18 @@ def search_message(message):
     try: 
         final_prompt = get_serp(query, num_results=int(settings["num"]), time_period=settings["time"], region=settings["region"])
         save_question(message.chat.id, 'Search in DuckDuckGo for: '+query, message.from_user)
-        resp = chatbots[message.chat.id].ask(final_prompt)
-        save_response(message.chat.id, resp["choices"][0]["text"])
+        resp = chatbots[message.chat.id].ask_gpt(final_prompt, temperature=float(settings["temperature"]))
+        save_response(message.chat.id, resp)
         
     except Exception as err:
         print('[ERROR] Search error: ', err)
         return bot.reply_to(message, "Search error: " + str(err))
     try: 
         # Try to response in markdown
-        bot.reply_to(message, resp["choices"][0]["text"], parse_mode="Markdown")
+        bot.reply_to(message, resp, parse_mode="Markdown")
     except Exception as err:
         print('[ERROR] Markdown error: ', err)
-        bot.reply_to(message, resp["choices"][0]["text"])
+        bot.reply_to(message, resp)
 
 @bot.message_handler(func=lambda message: True)
 def reply(message):
@@ -211,6 +218,8 @@ def reply(message):
     # Save message to chat history
     save_question(message.chat.id, message.text, message.from_user)
 
+    chat_history = get(message.chat.id)
+
     settings = get_all_chat_settings(message.chat.id, AVAILBLE_SETTINGS)
 
     # Send typing status
@@ -218,12 +227,13 @@ def reply(message):
 
     try:
         print(f"[{get_time()}] [{message.from_user.id} in {message.chat.id}] > {message.text} ({settings['temperature']})")
-        resp = chatbots[message.chat.id].ask(message.text, temperature=settings["temperature"])
-        print(f"[{get_time()}] [BOT] < {resp['choices'][0]['text']}")
-        bot.reply_to(message, resp["choices"][0]["text"])
-        save_response(message.chat.id, resp["choices"][0]["text"])
+        resp = chatbots[message.chat.id].ask(chat_history, temperature=settings["temperature"])
+        print(f"[{get_time()}] [BOT] < {resp}")
+        bot.reply_to(message, resp)
+        save_response(message.chat.id, resp)
     except Exception as ex:
         bot.reply_to(message, 'Oops, something went wrong. '+str(ex))
         print(f"[ERROR] On reply > {ex}")
+        traceback.print_exc()
 
 bot.infinity_polling()

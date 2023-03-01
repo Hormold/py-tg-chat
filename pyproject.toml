@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "py-tg-chat"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Nikita <hormold@gmail.com>"]
 readme = "README.md"
@@ -11,7 +11,7 @@ python = "^3.10"
 transliterate = "^1.10.2"
 pytelegrambotapi = "^4.10.0"
 python-decouple = "^3.7"
-openai = "^0.26.5"
+openai = "0.27.0"
 pre-commit = "^3.0.4"
 tiktoken = "^0.2.0"
 readability-lxml = "^0.8.1"

@@ -8,7 +8,7 @@ import tiktoken
 from decouple import config
 
 ENCODER = tiktoken.get_encoding("gpt2")
-ENGINE = config("OPENAI_ENGINE", default="text-davinci-003")
+ENGINE = config("OPENAI_ENGINE", default="gpt-3.5-turbo")
 
 
 class Chatbot:
@@ -30,38 +30,42 @@ class Chatbot:
         self.prompt = Prompt()
         self.conversations = {}
 
-    def ask(self, user_request: str, temperature: "0.5") -> dict:
+    def ask_gpt(self, prompt, temperature: "0.5") -> dict:
         """
         Send a request to ChatGPT and return the response
         """
-        prompt = self.prompt.construct_prompt(user_request)
         completion = openai.Completion.create(
-            engine=self.engine,
+            engine='text-davinci-003',
             prompt=prompt,
-            temperature=float(temperature),
+            temperature=float(temperature or 0.5),
             max_tokens=self.get_max_tokens(prompt),
-            stop=["\n\n\n"],
         )
         if completion.get("choices") is None:
             raise Exception("ChatGPT API returned no choices")
         if len(completion["choices"]) == 0:
             raise Exception("ChatGPT API returned no choices")
-        if completion["choices"][0].get("text") is None:
-            raise Exception("ChatGPT API returned no text")
-        completion["choices"][0]["text"] = completion["choices"][0]["text"].replace(
-            "<|im_end|>",
-            "",
+        
+        text = completion.choices[0].text;
+        return text
+
+
+    def ask(self, messages, temperature: "0.5") -> dict:
+        """
+        Send a request to ChatGPT and return the response
+        """
+        completion = openai.ChatCompletion.create(
+            model=self.engine,
+            temperature=float(temperature),
+            messages=messages,
+            #max_tokens=4000,
         )
-        # Add to chat history
-        self.prompt.add_to_chat_history(
-            "User: "
-            + user_request
-            + "\n\n\n"
-            + "ChatGPT: "
-            + completion["choices"][0]["text"]
-            + "<|im_end|>\n",
-        )
-        return completion
+        if completion.get("choices") is None:
+            raise Exception("ChatGPT API returned no choices")
+        if len(completion["choices"]) == 0:
+            raise Exception("ChatGPT API returned no choices")
+        
+        text = completion.choices[0].message.content;
+        return text
 
     def rollback(self, num: int) -> None:
         """
