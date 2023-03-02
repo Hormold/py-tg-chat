@@ -68,7 +68,7 @@ def get(chat_id):
     if str_id not in conversation_history:
         return []
     # Generate prompt from history. Using title, type and member list
-    prompt = f'You are ChatGPT bot, helping user inside Telegram chat. Do not send messages with you username in beginning. Current chat title: "{conversation_history[str_id]["title"]}"\n'
+    prompt = f'You are ChatGPT bot, helping user inside Telegram chat. Do not send reply with you name in beginning. Not send me: "ChatGPT bot: ". Current chat title: "{conversation_history[str_id]["title"]}"\n'
 
     if conversation_history[str_id]['type'] == "private":
         member_obj = conversation_history[str_id]['members']
@@ -213,3 +213,4 @@ def get_all_chat_settings(chat_id, default_settings):
         return default_settings
     mixed_settings = {**default_settings, **conversation_history[str_id]['settings']}
     return mixed_settings
+

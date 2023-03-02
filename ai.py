@@ -43,7 +43,7 @@ class Chatbot:
         if len(completion["choices"]) == 0:
             raise Exception("ChatGPT API returned no choices")
         
-        text = completion.choices[0].text;
+        text = completion.choices[0].text
         return text
 
 
@@ -62,5 +62,14 @@ class Chatbot:
         if len(completion["choices"]) == 0:
             raise Exception("ChatGPT API returned no choices")
         
-        text = completion.choices[0].message.content;
+        text = self.hotfix_text(completion.choices[0].message.content)
+        return text
+    
+    def hotfix_text(self, text) -> str:
+        """Hotfix for text"""
+        text_to_delete = [
+            'ChatGPT bot: ',
+        ]
+        for item in text_to_delete:
+            text = text.replace(item, '')
         return text
