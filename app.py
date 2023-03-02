@@ -6,8 +6,7 @@ from decouple import config
 import telebot
 
 # Local imports
-from revChatGPT.Official import Chatbot
-from revChatGPT.Official import Prompt
+from ai import Chatbot
 from conv import load, get, init, reset, rollback, get_file_path, trans
 from conv import save_question, save_response, save_chat_settings, get_all_chat_settings
 from utils.serp import get_serp
@@ -15,7 +14,6 @@ from utils.serp import get_serp
 # Get API key from .env file
 API_KEY = config("OPENAI_TOKEN")
 BOT_TOKEN = config("BOT_TOKEN")
-OPENAI_ENGINE = config("OPENAI_ENGINE", default="gpt-3.5-turbo")
 bot = telebot.TeleBot(BOT_TOKEN)
 chatbots = {}
 try:
@@ -25,7 +23,9 @@ except AttributeError as error:
     print(f"Looks like telegram token is invalid, error: {error}")
     exit(1)
 
-print(f"[BOT] Initialized Chatbot with engine {OPENAI_ENGINE}")
+BOT_USERNAME = bot.get_me().username
+
+print("[BOT] Initialized Chatbot @"+BOT_USERNAME)
 
 AVAILBLE_SETTINGS = [
     {
@@ -63,11 +63,6 @@ def initialize_chatbot(message):
         chatbots[message.chat.id] = Chatbot(api_key=API_KEY)
         load(message.chat.id)
         init(message.chat.id, message.chat.title, message.chat.type, message.from_user)
-        # Inject prompt to chatbot
-        prompt = Prompt()
-        prompt.chat_history = get(message.chat.id)
-        chatbots[message.chat.id].prompt = prompt
-        # Depricated old chat history
         print(f"[BOT] Created chatbot for chat {message.chat.id}")
         return True
     return False
@@ -77,11 +72,6 @@ def reset_event(message):
     """Reset chat history"""
     initialize_chatbot(message)
     reset(message.chat.id)
-    # Inject prompt to chatbot
-    prompt = Prompt()
-    prompt.chat_history = get(message.chat.id) # Reload history
-    chatbots[message.chat.id].prompt = prompt
-    # Depricated old chat history
     bot.reply_to(message, "Chat history has been reset to empty!")
 
 @bot.message_handler(commands=['rollback'])
@@ -90,28 +80,23 @@ def rollback_event(message):
     initialize_chatbot(message)
     # Get count from command of fallback to 1
     count = int(message.text.split()[1]) if len(message.text.split()) > 1 else 1
-    rollback(message.chat.id, count)
-    # Inject prompt to chatbot
-    prompt = Prompt()
-    prompt.chat_history = get(message.chat.id) # Reload history
-    chatbots[message.chat.id].prompt = prompt
-    # Check if can rollback (not more than history size)
-    if len(prompt.chat_history) < count:
+    history = get(message.chat.id)
+     # Check if can rollback (not more than history size)
+    if len(history) < count:
         bot.reply_to(message, "Can't rollback more than chat history size!")
         return
-    last_message = prompt.chat_history[-1]["text"]
-    bot.reply_to(message, "Chat history rollback successful. Last message now: " + last_message)
+    rollback(message.chat.id, count)
+    history = get(message.chat.id)
+    last_message = history[-count]
+    bot.reply_to(message, "Chat history rollback successful. Last message now: " + last_message["text"])
 
-@bot.message_handler(commands=['temperature'])
 
 @bot.message_handler(commands=['help', 'start'])
 def help_message(message):
     """Display help message"""
     bot.reply_to(message, """Hi, I'm a chatbot powered by OpenAI GPT-3. 
-Open source code on GitHub: https://github.com/Hormold/py-tg-chat
-Current chat history size: """ + str(len(get(message.chat.id))) + """
-Model in use: """ + OPENAI_ENGINE + """
-Owner: @define
+Open source code on GitHub: https://github.com/Hormold/py-tg-chat by @define
+Current chat history size: """ + str(len(get(message.chat.id))) + """. Bot uses ChatGPT API.
 
 Available commands:
 /help - Display this message
@@ -204,9 +189,11 @@ def reply(message):
     # Ignore zero length messages or it 1 symbol
     if len(message.text) < 2:
         return
-
+    is_reply = False
+    if message.reply_to_message is not None:
+        is_reply = message.reply_to_message.from_user.username == BOT_NAME
     # If message not from private chat, it must start with bot name
-    if message.chat.type != "private" and not message.text.startswith(f"@{BOT_NAME}"):
+    if message.chat.type != "private" and not message.text.startswith(f"@{BOT_NAME}") and not is_reply:
         return
     else:
         message.text = message.text.replace(f"@{BOT_NAME}", "").strip()

@@ -2,6 +2,7 @@
 import os
 import json
 from transliterate import translit
+import tiktoken
 from decouple import config
 
 ENABLE_TRANSLIT = config("ENABLE_TRANSLIT", default=False, cast=bool)
@@ -9,6 +10,26 @@ if ENABLE_TRANSLIT:
     print("[CONFIG] Transliteration is enabled (cyr -> latin)")
 logDir = os.path.join(os.getcwd(), "logs")
 conversation_history = {}
+ENCODER = tiktoken.get_encoding("gpt2")
+MODEL_MAX = 4000
+
+def calc_array_tokens(messages):
+    """Calculate tokens for array of messages"""
+    tokens = 0
+    for message in messages:
+        tokens += len(ENCODER.encode(message['content']))
+    return tokens
+
+def strip_to_max(messages):
+    """Strip messages array to max tokens, if needed"""
+    tokens = calc_array_tokens(messages)
+    print(f"Tokens: {tokens} (max: {MODEL_MAX})")
+    if tokens > MODEL_MAX:
+        # Remove second message, but stay first one!
+        messages.pop(1)
+        return strip_to_max(messages)
+    else:
+        return messages
 
 def user_to_str(user, with_id=True):
     """Convert user object to string"""
@@ -47,14 +68,14 @@ def get(chat_id):
     if str_id not in conversation_history:
         return []
     # Generate prompt from history. Using title, type and member list
-    prompt = f'You are ChatGPT bot, helping user inside Telegram. Chat title: "{conversation_history[str_id]["title"]}"\n'
+    prompt = f'You are ChatGPT bot, helping user inside Telegram chat. Do not send messages with you username in beginning. Current chat title: "{conversation_history[str_id]["title"]}"\n'
 
     if conversation_history[str_id]['type'] == "private":
         member_obj = conversation_history[str_id]['members']
         # Get first member
         member = member_obj[list(member_obj.keys())[0]]
         member = user_to_str(member, False)
-        prompt += f'Your companion is {member}\n'
+        prompt += f'Your companion in chat is {member}\n'
     else:
         members_count = len(conversation_history[str_id]["members"])
         prompt += f'You are in group chat with {members_count} members.\n'
@@ -69,8 +90,8 @@ def get(chat_id):
     # Remove messages where role is system
     real_history = [x for x in real_history if x['role'] != 'system']
     # Limit to LAST 25 messages
-    real_history = real_history[-25:] # TODO: calc based on messages length
     real_history = [{"role": "system", "content": prompt}] + real_history
+    real_history = strip_to_max(real_history)
     return real_history
 
 def load(chat_id):
