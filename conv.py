@@ -10,8 +10,9 @@ if ENABLE_TRANSLIT:
     print("[CONFIG] Transliteration is enabled (cyr -> latin)")
 logDir = os.path.join(os.getcwd(), "logs")
 conversation_history = {}
-ENCODER = tiktoken.get_encoding("gpt2")
-MODEL_MAX = 4000
+ENGINE = config("OPENAI_ENGINE", default="gpt-3.5-turbo")
+ENCODER = tiktoken.encoding_for_model(ENGINE)
+MODEL_MAX = 4096
 
 def calc_array_tokens(messages):
     """Calculate tokens for array of messages"""

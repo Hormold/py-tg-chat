@@ -137,8 +137,11 @@ def settings_message(message):
             value = settings[key]["default"]
         if key == "num":
             value = int(value)
-        #if key == "temperature":
-        #    value = float(value)
+        if key == "temperature":
+            if(float(value) > 1.0):
+                value = "1.0"
+            if(float(value) < 0.1):
+                value = "0.1"
         save_chat_settings(message.chat.id, key, value)
         bot.reply_to(message, f"Setting {key} has been changed to {value}")
 

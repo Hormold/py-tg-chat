@@ -7,8 +7,8 @@ import openai
 import tiktoken
 from decouple import config
 
-ENCODER = tiktoken.get_encoding("gpt2")
 ENGINE = config("OPENAI_ENGINE", default="gpt-3.5-turbo")
+ENCODER = tiktoken.encoding_for_model(ENGINE)
 
 
 class Chatbot:
